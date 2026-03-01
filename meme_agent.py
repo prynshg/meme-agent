@@ -49,10 +49,24 @@ CAPTION: ...
 HASHTAGS: ...
 """
 
-API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+API_URL = "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.2"
 headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 
-response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
+response = requests.post(
+    API_URL,
+    headers={
+        "Authorization": f"Bearer {HF_TOKEN}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 400,
+            "temperature": 0.8,
+            "return_full_text": False
+        }
+    }
+)
 
 data = response.json()
 
@@ -64,9 +78,6 @@ elif isinstance(data, dict) and "error" in data:
 else:
     print("Unexpected HF response:", data)
     output = ""
-if not output:
-    print("No output generated. Exiting safely.")
-    exit()
 
 blocks = output.split("MEME:")
 posts = []
