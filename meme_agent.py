@@ -53,7 +53,20 @@ API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Inst
 headers = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
-output = response.json()[0]["generated_text"]
+
+data = response.json()
+
+if isinstance(data, list):
+    output = data[0].get("generated_text", "")
+elif isinstance(data, dict) and "error" in data:
+    print("HuggingFace Error:", data["error"])
+    output = ""
+else:
+    print("Unexpected HF response:", data)
+    output = ""
+if not output:
+    print("No output generated. Exiting safely.")
+    exit()
 
 blocks = output.split("MEME:")
 posts = []
