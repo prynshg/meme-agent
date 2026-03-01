@@ -159,8 +159,8 @@ def create_meme(text, index):
     x = (width - (bbox[2] - bbox[0])) / 2
     y = (height - (bbox[3] - bbox[1])) / 2
 
-    draw.text((x, y), wrapped_text, fill="black", font=font)
-    draw.text((width - 200, height - 50), WATERMARK_TEXT, fill="black", font=font)
+    draw.text((x, y), wrapped_text, fill="white", font=font)
+    draw.text((width - 200, height - 50), WATERMARK_TEXT, fill="white", font=font)
 
     filename = f"{SAVE_FOLDER}/meme_{index}.png"
     image.save(filename)
