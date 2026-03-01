@@ -2,8 +2,8 @@ import os
 import textwrap
 import datetime
 import requests
+import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont
-from pytrends.request import TrendReq
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -24,15 +24,26 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 os.makedirs(SAVE_FOLDER, exist_ok=True)
 
-# ---------------- GET TRENDS ----------------
+# ---------------- GET TRENDS FROM GOOGLE NEWS RSS ----------------
 
-try:
-    pytrends = TrendReq(hl='en-IN', tz=330)
-    trending = pytrends.trending_searches(pn='india')[0:10].tolist()
-    trend_text = ", ".join(trending)
-except Exception:
-    print("Trend fetch failed, using fallback.")
-    trend_text = "Indian job market, AI, dating culture, gym, exams"
+def get_trends_from_news():
+    try:
+        url = "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en"
+        response = requests.get(url, timeout=10)
+        root = ET.fromstring(response.content)
+
+        titles = []
+        for item in root.findall(".//item")[:10]:
+            title = item.find("title").text
+            titles.append(title)
+
+        return ", ".join(titles)
+
+    except Exception:
+        print("News RSS failed, using fallback trends.")
+        return "Indian job market, AI tools, dating culture, cricket, Bollywood, exams, startups"
+
+trend_text = get_trends_from_news()
 
 # ---------------- GENERATE MEMES (GROQ) ----------------
 
@@ -71,7 +82,7 @@ def generate_memes(prompt):
 prompt = f"""
 Generate exactly {NUM_POSTS} Indian meme posts.
 
-Inspired by these trends:
+Inspired by these news headlines:
 {trend_text}
 
 Format STRICTLY:
