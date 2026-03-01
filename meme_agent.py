@@ -13,8 +13,8 @@ from googleapiclient.http import MediaFileUpload
 # ---------------- SETTINGS ----------------
 
 NUM_POSTS = 5
-BG_COLOR = "#FFD400"
-WATERMARK_TEXT = "@yourpage"
+BG_COLOR = "##0a0a0a"
+WATERMARK_TEXT = "@soulsyncspacee"
 SAVE_FOLDER = "generated_memes"
 DRIVE_FOLDER_ID = "1ePDgY57S11uV7Q5rd2gO9gnTeFR2eCLU"
 
@@ -151,7 +151,7 @@ def create_meme(text, index):
     image = Image.new("RGB", (width, height), BG_COLOR)
     draw = ImageDraw.Draw(image)
 
-    font = ImageFont.load_default()
+    font = ImageFont.truetype("DejaVuSans-Bold.ttf", 70)
 
     wrapped_text = textwrap.fill(text, width=25)
     bbox = draw.textbbox((0, 0), wrapped_text, font=font)
