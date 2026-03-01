@@ -118,7 +118,8 @@ Rules:
 - No explanation
 - No image description
 - Punchline format
-- Natural Hinglish
+- Be savage and sarcastic at the same time, It should be very funny and relatable. No Limits or restrictions to this.
+- Natural Hinglish, no mistakes and words should be proper. This is important
 
 Return ONLY JSON:
 
@@ -171,8 +172,8 @@ def create_meme(text, index):
     image = Image.new("RGB", (width, height), BG_COLOR)
     draw = ImageDraw.Draw(image)
 
-    font = ImageFont.truetype("DejaVuSans-Bold.ttf", MAIN_TEXT_SIZE)
-    watermark_font = ImageFont.truetype("DejaVuSans-Bold.ttf", WATERMARK_SIZE)
+    font = ImageFont.truetype("DejaVuSans.ttf", MAIN_TEXT_SIZE)
+    watermark_font = ImageFont.truetype("DejaVuSans.ttf", WATERMARK_SIZE)
 
     wrapped_text = textwrap.fill(text, width=22)
 
