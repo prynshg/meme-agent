@@ -106,6 +106,20 @@ Turn the following Indian news topics into funny, sarcastic, highly relatable In
 News topics:
 {trend_text}
 
+Example tone:
+
+Meme: Pata nahi mujh jaise mastikhor mai itni sadness kaha se aa rhi hai.
+Caption: Bohot sad rehne laga hu
+Hashtags: #meme #viral #RelatableAF
+
+Meme: Delhi traffic moves slower than my career growth.
+Caption: 2 km = 45 minutes + existential crisis.
+Hashtags: #DelhiTraffic #UrbanLife #TooReal #IndianMeme
+
+Meme: Today's kids don't even get chicken pox anymore, they go straight to STD's.
+Caption: Trainer strong. Me weak.
+Hashtags: #GymLife #RelatableAF #IndianHumor #GenZMemes
+
 Rules:
 - Do NOT describe images.
 - Do NOT summarize news.
@@ -127,6 +141,8 @@ Return ONLY JSON in this format:
     "hashtags": "8-12 relevant hashtags"
   }}
 ]
+
+Use 40–60% Hinglish naturally.
 
 Generate exactly {NUM_POSTS} memes.
 Only JSON.
