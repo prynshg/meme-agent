@@ -30,7 +30,7 @@ try:
     pytrends = TrendReq(hl='en-IN', tz=330)
     trending = pytrends.trending_searches(pn='india')[0:10].tolist()
     trend_text = ", ".join(trending)
-except Exception as e:
+except Exception:
     print("Trend fetch failed, using fallback.")
     trend_text = "Indian job market, AI, dating culture, gym, exams"
 
@@ -46,8 +46,14 @@ def generate_memes(prompt):
         json={
             "model": "llama-3.1-8b-instant",
             "messages": [
-                {"role": "system", "content": "You are an Indian meme strategist. Slightly edgy but safe. English + Hinglish mix."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are an Indian meme strategist. Slightly edgy but safe. English + Hinglish mix."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ],
             "temperature": 0.8,
             "max_tokens": 900
@@ -84,31 +90,36 @@ if not output:
     print("No output generated.")
     exit()
 
-# ---------------- PARSE OUTPUT ----------------
+# ---------------- ROBUST PARSING ----------------
 
-blocks = output.split("MEME:")
 posts = []
 
-for block in blocks[1:NUM_POSTS+1]:
+sections = output.split("MEME:")
+
+for section in sections[1:NUM_POSTS+1]:
     meme_text = ""
     caption = ""
     hashtags = ""
 
-    lines = block.strip().split("\n")
+    lines = [l.strip() for l in section.strip().split("\n") if l.strip()]
 
     for line in lines:
-        if line.startswith("CAPTION:"):
-            caption = line.replace("CAPTION:", "").strip()
-        elif line.startswith("HASHTAGS:"):
-            hashtags = line.replace("HASHTAGS:", "").strip()
+
+        if line.upper().startswith("CAPTION"):
+            caption = line.split(":", 1)[-1].strip()
+
+        elif line.upper().startswith("HASHTAG"):
+            hashtags = line.split(":", 1)[-1].strip()
+
         elif not meme_text:
-            meme_text = line.strip()
+            meme_text = line
 
     if meme_text:
         posts.append((meme_text, caption, hashtags))
 
-if not posts:
-    print("Parsing failed.")
+if len(posts) < 1:
+    print("Parser failed. Raw output below:\n")
+    print(output)
     exit()
 
 # ---------------- IMAGE CREATION ----------------
