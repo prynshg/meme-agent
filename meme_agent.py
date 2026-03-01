@@ -13,7 +13,7 @@ from googleapiclient.http import MediaFileUpload
 # ---------------- SETTINGS ----------------
 
 NUM_POSTS = 5
-BG_COLOR = "##0a0a0a"
+BG_COLOR = "#0a0a0a"
 WATERMARK_TEXT = "@soulsyncspacee"
 SAVE_FOLDER = "generated_memes"
 DRIVE_FOLDER_ID = "1ePDgY57S11uV7Q5rd2gO9gnTeFR2eCLU"
