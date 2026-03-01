@@ -151,7 +151,11 @@ def create_meme(text, index):
     image = Image.new("RGB", (width, height), BG_COLOR)
     draw = ImageDraw.Draw(image)
 
-    font = ImageFont.truetype("DejaVuSans-Bold.ttf", 70)
+    MAIN_TEXT_SIZE = 75
+    WATERMARK_SIZE = 30
+    
+    font = ImageFont.truetype("DejaVuSans-Bold.ttf", MAIN_TEXT_SIZE)
+    watermark_font = ImageFont.truetype("DejaVuSans-Bold.ttf", WATERMARK_SIZE)
 
     wrapped_text = textwrap.fill(text, width=25)
     bbox = draw.textbbox((0, 0), wrapped_text, font=font)
@@ -160,7 +164,16 @@ def create_meme(text, index):
     y = (height - (bbox[3] - bbox[1])) / 2
 
     draw.text((x, y), wrapped_text, fill="white", font=font)
-    draw.text((width - 200, height - 50), WATERMARK_TEXT, fill="white", font=font)
+    watermark_bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=watermark_font)
+    wm_width = watermark_bbox[2] - watermark_bbox[0]
+    wm_height = watermark_bbox[3] - watermark_bbox[1]
+    
+    margin = 30  # distance from edge
+    
+    wm_x = (width - wm_width) / 2
+    wm_y = height - wm_height - margin
+    
+    draw.text((wm_x, wm_y), WATERMARK_TEXT, fill="white", font=watermark_font)
 
     filename = f"{SAVE_FOLDER}/meme_{index}.png"
     image.save(filename)
