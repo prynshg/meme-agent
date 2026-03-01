@@ -59,7 +59,7 @@ def generate_memes(prompt):
             "Content-Type": "application/json"
         },
         json={
-            "model": "llama-3.1-70b-versatile",
+            "model": "openai/gpt-oss-120b",
             "messages": [
                 {
                     "role": "system",
