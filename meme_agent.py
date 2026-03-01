@@ -12,14 +12,14 @@ from googleapiclient.http import MediaFileUpload
 
 # ---------------- SETTINGS ----------------
 
-NUM_POSTS = 5
+NUM_FINAL_POSTS = 5
+NUM_GENERATE = 15
 
-BG_COLOR = "#080808"        # Background color
-TEXT_COLOR = "#ebedeb"      # Main meme text color
-STROKE_COLOR = "#ebedeb"    # Outline color
+BG_COLOR = "#0f0f0f"
+TEXT_COLOR = "#f5f5f5"
 
-MAIN_TEXT_SIZE = 65
-WATERMARK_SIZE = 20
+MAIN_TEXT_SIZE = 62
+WATERMARK_SIZE = 18
 
 WATERMARK_TEXT = "@soulsyncspacee"
 SAVE_FOLDER = "generated_memes"
@@ -35,23 +35,20 @@ os.makedirs(SAVE_FOLDER, exist_ok=True)
 # ---------------- ROTATING THEMES ----------------
 
 themes = [
-    "Indian middle class struggles",
     "Overthinking and sadness",
+    "Indian middle class struggles",
     "Dating in India",
-    "Gym motivation vs reality",
-    "Corporate job life",
+    "Corporate burnout",
+    "Gym vs motivation",
     "Salary problems",
-    "Indian parents logic",
-    "Gen Z existential crisis",
-    "Being broke but acting rich",
-    "Toxic relationships"
+    "Gen Z existential crisis"
 ]
 
 selected_theme = random.choice(themes)
 
-# ---------------- GENERATE MEMES (GROQ) ----------------
+# ---------------- GROQ CALL FUNCTION ----------------
 
-def generate_memes(prompt):
+def groq_call(messages, temperature=0.9):
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={
@@ -60,40 +57,9 @@ def generate_memes(prompt):
         },
         json={
             "model": "openai/gpt-oss-120b",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": """
-You are a viral Indian meme page admin.
-
-You create savage, relatable, slightly dark Gen Z Indian humor.
-
-Your humor style:
-- Clean but savage
-- Dark but intelligent
-- Relatable
-- Gen Z Indian tone
-- Hinglish used naturally
-- No grammar mistakes
-- No forced slang
-- Very funny
-
-Important:
-Hinglish must sound natural.
-Sentences must be grammatically correct.
-Do not invent broken Hindi words.
-Do not translate literally.
-
-Make people say: "Bro this is too real."
-"""
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.9,
-            "max_tokens": 1200
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": 2000
         },
         timeout=60
     )
@@ -102,76 +68,120 @@ Make people say: "Bro this is too real."
         print("Groq error:", response.text)
         exit()
 
-    data = response.json()
-    return data["choices"][0]["message"]["content"]
+    return response.json()["choices"][0]["message"]["content"]
 
-prompt = f"""
-Generate exactly {NUM_POSTS} savage Indian one-line memes.
+# ---------------- STEP 1: GENERATE 15 MEMES ----------------
+
+generation_prompt = f"""
+Generate {NUM_GENERATE} Indian meme one-liners.
 
 Theme: {selected_theme}
 
-Example tone:
+Tone:
+- Observational
+- Relatable
+- Slightly tragic but funny
+- Either natural hinglish or proper English, not a combination of both
+- Slangs such has chod(fuck) , gaand(ass) are ok but limited .
+- No grammar mistakes
+- No politics or religion
 
-Pata nahi mujh jaise mastikhor mein itni sadness kaha se aa rahi hai.
-Salary aati hai sirf account check karne ke liye.
-Today's kids don't even get chicken pox anymore, they go straight to STD's.
-Main toxic nahi hoon, bas overthinking ka premium version hoon.
+Bad examples:
+"Life is sad."
+"Main toxic nahi hoon, bas overthinking ka premium version hoon."
+"Salary aati hai sirf account check karne ke liye."
+"Gym join kiya tha body ke liye, ab sirf guilt mil raha hai."
 
-Guidelines:
+Good examples:
+"Todays kids dont even get chicken pox anymore, they go straight to AIDS."
+"Living in your parents house is free because you pay with your mental health."
+"being a son is crazy because the moment you are born, you are competing with modiji for the love of your father"
+"10 suraj milke bhi itni aag nahi lagate jitni aapke dp ne laga rakhi hai"
+"Nahi rehna to mat reh par mental health mat chod meri"
+
+Rules:
+- 10–16 words
+- Clear punchline
 - One line only
-- Max 16 words
-- Sharp punchline
-- Smart exaggeration
-- Natural Hinglish
-- No spelling mistakes
-- No broken grammar
-- No cringe slang
-- Funny > dark
-- Relatable > shocking
 
 Return ONLY JSON:
-
 [
-  {{
-    "meme": "one clean funny line"
-  }}
+  {{ "meme": "text" }}
 ]
-
-Generate exactly {NUM_POSTS} items.
-Only JSON.
 """
 
-output = generate_memes(prompt)
+messages_generate = [
+    {
+        "role": "system",
+        "content": "You are a clever Indian meme writer with strong Hinglish control."
+    },
+    {
+        "role": "user",
+        "content": generation_prompt
+    }
+]
 
-if not output:
-    print("No output generated.")
-    exit()
+raw_output = groq_call(messages_generate, temperature=0.9)
 
-# ---------------- CLEAN & PARSE JSON ----------------
-
-output = output.strip()
-
-if output.startswith("```"):
-    output = output.split("```")[1]
-
-start = output.find("[")
-end = output.rfind("]")
-
-if start == -1 or end == -1:
-    print("Could not find JSON array. Raw output below:\n")
-    print(output)
-    exit()
-
-json_text = output[start:end+1]
+# Clean JSON
+raw_output = raw_output.strip()
+start = raw_output.find("[")
+end = raw_output.rfind("]")
+json_text = raw_output[start:end+1]
 
 try:
-    posts = json.loads(json_text)
-except Exception:
-    print("JSON parsing failed. Raw output below:\n")
-    print(output)
+    generated_memes = json.loads(json_text)
+except:
+    print("Generation JSON failed:")
+    print(raw_output)
     exit()
 
-posts = posts[:NUM_POSTS]
+# ---------------- STEP 2: SCORE MEMES ----------------
+
+score_prompt = f"""
+Rate these memes from 1 to 10 based on:
+- Relatability
+- Humor
+- Clever twist
+- Either natual hinglish or Enligsh, not a combination of both
+
+Return ONLY JSON:
+[
+  {{ "meme": "text", "score": number }}
+]
+
+Memes:
+{json.dumps(generated_memes, indent=2)}
+"""
+
+messages_score = [
+    {
+        "role": "system",
+        "content": "You are a strict meme critic."
+    },
+    {
+        "role": "user",
+        "content": score_prompt
+    }
+]
+
+scored_output = groq_call(messages_score, temperature=0.5)
+
+scored_output = scored_output.strip()
+start = scored_output.find("[")
+end = scored_output.rfind("]")
+json_text = scored_output[start:end+1]
+
+try:
+    scored_memes = json.loads(json_text)
+except:
+    print("Scoring JSON failed:")
+    print(scored_output)
+    exit()
+
+# Sort & pick best
+scored_memes.sort(key=lambda x: x["score"], reverse=True)
+final_memes = scored_memes[:NUM_FINAL_POSTS]
 
 # ---------------- IMAGE CREATION ----------------
 
@@ -180,6 +190,7 @@ def create_meme(text, index):
     image = Image.new("RGB", (width, height), BG_COLOR)
     draw = ImageDraw.Draw(image)
 
+    # Cleaner non-bold font
     font = ImageFont.truetype("DejaVuSans.ttf", MAIN_TEXT_SIZE)
     watermark_font = ImageFont.truetype("DejaVuSans.ttf", WATERMARK_SIZE)
 
@@ -196,12 +207,10 @@ def create_meme(text, index):
         (x, y),
         wrapped_text,
         font=font,
-        fill=TEXT_COLOR,
-        stroke_width=3,
-        stroke_fill=STROKE_COLOR
+        fill=TEXT_COLOR
     )
 
-    # Watermark positioning (bottom right)
+    # Center bottom watermark
     watermark_bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=watermark_font)
     wm_width = watermark_bbox[2] - watermark_bbox[0]
     wm_height = watermark_bbox[3] - watermark_bbox[1]
@@ -214,7 +223,7 @@ def create_meme(text, index):
         (wm_x, wm_y),
         WATERMARK_TEXT,
         font=watermark_font,
-        fill="#ebedeb"
+        fill="#888888"
     )
 
     filename = f"{SAVE_FOLDER}/meme_{index}.png"
@@ -240,9 +249,9 @@ folder_metadata = {
 folder = service.files().create(body=folder_metadata, fields='id').execute()
 folder_id = folder.get('id')
 
-for i, post in enumerate(posts, start=1):
+for i, meme in enumerate(final_memes, start=1):
 
-    meme_text = post.get("meme", "")
+    meme_text = meme["meme"]
 
     image_path = create_meme(meme_text, i)
 
