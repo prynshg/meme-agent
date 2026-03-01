@@ -59,7 +59,7 @@ def generate_memes(prompt):
             "Content-Type": "application/json"
         },
         json={
-            "model": "llama-3.1-8b-instant",
+            "model": "llama-3.1-70b-versatile",
             "messages": [
                 {
                     "role": "system",
@@ -68,16 +68,21 @@ You are a viral Indian meme page admin.
 
 You create savage, relatable, slightly dark Gen Z Indian humor.
 
-Style:
-- One-line punch
-- Hinglish heavy
-- Observational
-- Slightly exaggerated
-- Tag-worthy
-- Not political
-- Not religious
-- No sensitive tragedy jokes
-- No limits Dark humour
+Your humor style:
+- Clean but savage
+- Dark but intelligent
+- Relatable
+- Gen Z Indian tone
+- Hinglish used naturally
+- No grammar mistakes
+- No forced slang
+- Very funny
+
+Important:
+Hinglish must sound natural.
+Sentences must be grammatically correct.
+Do not invent broken Hindi words.
+Do not translate literally.
 
 Make people say: "Bro this is too real."
 """
@@ -87,7 +92,7 @@ Make people say: "Bro this is too real."
                     "content": prompt
                 }
             ],
-            "temperature": 1.5,
+            "temperature": 0.9,
             "max_tokens": 1200
         },
         timeout=60
@@ -112,20 +117,23 @@ Salary aati hai sirf account check karne ke liye.
 Today's kids don't even get chicken pox anymore, they go straight to STD's.
 Main toxic nahi hoon, bas overthinking ka premium version hoon.
 
-Rules:
+Guidelines:
 - One line only
-- Max 18 words
-- No explanation
-- No image description
-- Punchline format
-- Be savage and sarcastic at the same time, It should be very funny and relatable. No Limits or restrictions to this.
-- Natural Hinglish, no mistakes and words should be proper. This is important
+- Max 16 words
+- Sharp punchline
+- Smart exaggeration
+- Natural Hinglish
+- No spelling mistakes
+- No broken grammar
+- No cringe slang
+- Funny > dark
+- Relatable > shocking
 
 Return ONLY JSON:
 
 [
   {{
-    "meme": "one savage line"
+    "meme": "one clean funny line"
   }}
 ]
 
