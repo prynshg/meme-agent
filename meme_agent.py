@@ -1,8 +1,8 @@
 import os
 import textwrap
 import datetime
+import random
 import requests
-import xml.etree.ElementTree as ET
 import json
 from PIL import Image, ImageDraw, ImageFont
 
@@ -13,7 +13,14 @@ from googleapiclient.http import MediaFileUpload
 # ---------------- SETTINGS ----------------
 
 NUM_POSTS = 5
-BG_COLOR = "#0a0a0a"
+
+BG_COLOR = "#080808"        # Background color
+TEXT_COLOR = "#ebedeb"      # Main meme text color
+STROKE_COLOR = "#ebedeb"    # Outline color
+
+MAIN_TEXT_SIZE = 65
+WATERMARK_SIZE = 20
+
 WATERMARK_TEXT = "@soulsyncspacee"
 SAVE_FOLDER = "generated_memes"
 DRIVE_FOLDER_ID = "1ePDgY57S11uV7Q5rd2gO9gnTeFR2eCLU"
@@ -25,26 +32,22 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 os.makedirs(SAVE_FOLDER, exist_ok=True)
 
-# ---------------- GET TRENDS (GOOGLE NEWS RSS) ----------------
+# ---------------- ROTATING THEMES ----------------
 
-def get_trends_from_news():
-    try:
-        url = "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en"
-        response = requests.get(url, timeout=10)
-        root = ET.fromstring(response.content)
+themes = [
+    "Indian middle class struggles",
+    "Overthinking and sadness",
+    "Dating in India",
+    "Gym motivation vs reality",
+    "Corporate job life",
+    "Salary problems",
+    "Indian parents logic",
+    "Gen Z existential crisis",
+    "Being broke but acting rich",
+    "Toxic relationships"
+]
 
-        titles = []
-        for item in root.findall(".//item")[:10]:
-            title = item.find("title").text
-            titles.append(title)
-
-        return ", ".join(titles)
-
-    except Exception:
-        print("News RSS failed, using fallback trends.")
-        return "Indian job market, AI tools, dating culture, cricket, Bollywood, exams, startups"
-
-trend_text = get_trends_from_news()
+selected_theme = random.choice(themes)
 
 # ---------------- GENERATE MEMES (GROQ) ----------------
 
@@ -61,26 +64,23 @@ def generate_memes(prompt):
                 {
                     "role": "system",
                     "content": """
-                        You are a savage but safe Indian meme page admin.
-                        You create viral Instagram memes.
-                        Your humor is:
-                        - Relatable
-                        - Slightly dark
-                        - Gen Z Indian
-                        - Sarcastic
-                        - Hinglish dominant
-                        - Roast style
-                        - Tag-worthy
-                        
-                        You NEVER summarize news.
-                        You turn serious news into relatable jokes.
-                        
-                        You avoid:
-                        - Religion
-                        - Real tragedy jokes
-                        
-                        Your memes must feel like they came from a viral Indian meme page.
-                        """
+You are a viral Indian meme page admin.
+
+You create savage, relatable, slightly dark Gen Z Indian humor.
+
+Style:
+- One-line punch
+- Hinglish heavy
+- Observational
+- Slightly exaggerated
+- Tag-worthy
+- Not political
+- Not religious
+- No sensitive tragedy jokes
+- No limits Dark humour
+
+Make people say: "Bro this is too real."
+"""
                 },
                 {
                     "role": "user",
@@ -101,53 +101,35 @@ def generate_memes(prompt):
     return data["choices"][0]["message"]["content"]
 
 prompt = f"""
-Turn the following Indian news topics into funny, sarcastic, highly relatable Instagram memes.
+Generate exactly {NUM_POSTS} savage Indian one-line memes.
 
-News topics:
-{trend_text}
+Theme: {selected_theme}
 
 Example tone:
 
-Meme: Pata nahi mujh jaise mastikhor mai itni sadness kaha se aa rhi hai.
-Caption: Bohot sad rehne laga hu
-Hashtags: #meme #viral #RelatableAF
-
-Meme: Delhi traffic moves slower than my career growth.
-Caption: 2 km = 45 minutes + existential crisis.
-Hashtags: #DelhiTraffic #UrbanLife #TooReal #IndianMeme
-
-Meme: Today's kids don't even get chicken pox anymore, they go straight to STD's.
-Caption: Trainer strong. Me weak.
-Hashtags: #GymLife #RelatableAF #IndianHumor #GenZMemes
+Pata nahi mujh jaise mastikhor mein itni sadness kaha se aa rahi hai.
+Salary aati hai sirf account check karne ke liye.
+Today's kids don't even get chicken pox anymore, they go straight to STD's.
+Main toxic nahi hoon, bas overthinking ka premium version hoon.
 
 Rules:
-- Do NOT describe images.
-- Do NOT summarize news.
-- Make it funny.
-- Use Hinglish naturally.
-- Use Indian Gen Z tone.
-- Make it tag-worthy.
-- Make people say "bro this is too real".
-- Add exaggeration.
-- Add roast style humor.
-- Be bold.
+- One line only
+- Max 18 words
+- No explanation
+- No image description
+- Punchline format
+- Natural Hinglish
 
-Return ONLY JSON in this format:
+Return ONLY JSON:
 
 [
   {{
-    "meme": "short punchy meme text",
-    "caption": "funny caption in Hinglish",
-    "hashtags": "8-12 relevant hashtags"
+    "meme": "one savage line"
   }}
 ]
 
-Use 40–60% Hinglish naturally.
-
-Generate exactly {NUM_POSTS} memes.
+Generate exactly {NUM_POSTS} items.
 Only JSON.
-No markdown.
-No explanation.
 """
 
 output = generate_memes(prompt)
@@ -160,11 +142,9 @@ if not output:
 
 output = output.strip()
 
-# Remove markdown wrapping if present
 if output.startswith("```"):
     output = output.split("```")[1]
 
-# Extract JSON array safely
 start = output.find("[")
 end = output.rfind("]")
 
@@ -182,11 +162,6 @@ except Exception:
     print(output)
     exit()
 
-if not isinstance(posts, list) or len(posts) < 1:
-    print("Invalid JSON structure.")
-    print(output)
-    exit()
-
 posts = posts[:NUM_POSTS]
 
 # ---------------- IMAGE CREATION ----------------
@@ -196,29 +171,42 @@ def create_meme(text, index):
     image = Image.new("RGB", (width, height), BG_COLOR)
     draw = ImageDraw.Draw(image)
 
-    MAIN_TEXT_SIZE = 75
-    WATERMARK_SIZE = 30
-    
     font = ImageFont.truetype("DejaVuSans-Bold.ttf", MAIN_TEXT_SIZE)
     watermark_font = ImageFont.truetype("DejaVuSans-Bold.ttf", WATERMARK_SIZE)
 
-    wrapped_text = textwrap.fill(text, width=25)
+    wrapped_text = textwrap.fill(text, width=22)
+
     bbox = draw.textbbox((0, 0), wrapped_text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
 
-    x = (width - (bbox[2] - bbox[0])) / 2
-    y = (height - (bbox[3] - bbox[1])) / 2
+    x = (width - text_width) / 2
+    y = (height - text_height) / 2
 
-    draw.text((x, y), wrapped_text, fill="white", font=font)
+    draw.text(
+        (x, y),
+        wrapped_text,
+        font=font,
+        fill=TEXT_COLOR,
+        stroke_width=3,
+        stroke_fill=STROKE_COLOR
+    )
+
+    # Watermark positioning (bottom right)
     watermark_bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=watermark_font)
     wm_width = watermark_bbox[2] - watermark_bbox[0]
     wm_height = watermark_bbox[3] - watermark_bbox[1]
-    
-    margin = 30  # distance from edge
-    
+
+    margin = 40
     wm_x = (width - wm_width) / 2
     wm_y = height - wm_height - margin
-    
-    draw.text((wm_x, wm_y), WATERMARK_TEXT, fill="white", font=watermark_font)
+
+    draw.text(
+        (wm_x, wm_y),
+        WATERMARK_TEXT,
+        font=watermark_font,
+        fill="#ebedeb"
+    )
 
     filename = f"{SAVE_FOLDER}/meme_{index}.png"
     image.save(filename)
@@ -243,29 +231,18 @@ folder_metadata = {
 folder = service.files().create(body=folder_metadata, fields='id').execute()
 folder_id = folder.get('id')
 
-caption_path = f"{SAVE_FOLDER}/captions_{today}.txt"
+for i, post in enumerate(posts, start=1):
 
-with open(caption_path, "w", encoding="utf-8") as caption_file:
+    meme_text = post.get("meme", "")
 
-    for i, post in enumerate(posts, start=1):
+    image_path = create_meme(meme_text, i)
 
-        meme_text = post.get("meme", "")
-        caption = post.get("caption", "")
-        hashtags = post.get("hashtags", "")
+    file_metadata = {
+        'name': f"meme_{i}.png",
+        'parents': [folder_id]
+    }
 
-        image_path = create_meme(meme_text, i)
-
-        file_metadata = {
-            'name': f"meme_{i}.png",
-            'parents': [folder_id]
-        }
-
-        media = MediaFileUpload(image_path, mimetype='image/png')
-        service.files().create(body=file_metadata, media_body=media).execute()
-
-        caption_file.write(f"POST {i}\n")
-        caption_file.write(meme_text + "\n\n")
-        caption_file.write(caption + "\n")
-        caption_file.write(hashtags + "\n\n")
+    media = MediaFileUpload(image_path, mimetype='image/png')
+    service.files().create(body=file_metadata, media_body=media).execute()
 
 print("Memes generated and uploaded successfully.")
