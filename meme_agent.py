@@ -60,14 +60,34 @@ def generate_memes(prompt):
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are an Indian meme strategist. Slightly edgy but safe. English + Hinglish mix."
+                    "content": """
+                        You are a savage but safe Indian meme page admin.
+                        You create viral Instagram memes.
+                        Your humor is:
+                        - Relatable
+                        - Slightly dark
+                        - Gen Z Indian
+                        - Sarcastic
+                        - Hinglish dominant
+                        - Roast style
+                        - Tag-worthy
+                        
+                        You NEVER summarize news.
+                        You turn serious news into relatable jokes.
+                        
+                        You avoid:
+                        - Religion
+                        - Real tragedy jokes
+                        
+                        Your memes must feel like they came from a viral Indian meme page.
+                        """
                 },
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            "temperature": 0.8,
+            "temperature": 1.5,
             "max_tokens": 1200
         },
         timeout=60
@@ -81,28 +101,37 @@ def generate_memes(prompt):
     return data["choices"][0]["message"]["content"]
 
 prompt = f"""
-Generate exactly {NUM_POSTS} Indian meme posts.
+Turn the following Indian news topics into funny, sarcastic, highly relatable Instagram memes.
 
-Inspired by these news headlines:
+News topics:
 {trend_text}
 
-Return ONLY valid JSON.
+Rules:
+- Do NOT describe images.
+- Do NOT summarize news.
+- Make it funny.
+- Use Hinglish naturally.
+- Use Indian Gen Z tone.
+- Make it tag-worthy.
+- Make people say "bro this is too real".
+- Add exaggeration.
+- Add roast style humor.
+- Be bold.
 
-Format:
+Return ONLY JSON in this format:
 
 [
   {{
-    "meme": "text",
-    "caption": "text",
-    "hashtags": "text"
+    "meme": "short punchy meme text",
+    "caption": "funny caption in Hinglish",
+    "hashtags": "8-12 relevant hashtags"
   }}
 ]
 
-Return exactly {NUM_POSTS} objects inside the array.
-
+Generate exactly {NUM_POSTS} memes.
+Only JSON.
 No markdown.
 No explanation.
-Only JSON.
 """
 
 output = generate_memes(prompt)
