@@ -3,6 +3,7 @@ import textwrap
 import datetime
 import requests
 import xml.etree.ElementTree as ET
+import json
 from PIL import Image, ImageDraw, ImageFont
 
 from google.oauth2.credentials import Credentials
@@ -24,7 +25,7 @@ SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
 os.makedirs(SAVE_FOLDER, exist_ok=True)
 
-# ---------------- GET TRENDS FROM GOOGLE NEWS RSS ----------------
+# ---------------- GET TRENDS (GOOGLE NEWS RSS) ----------------
 
 def get_trends_from_news():
     try:
@@ -67,7 +68,7 @@ def generate_memes(prompt):
                 }
             ],
             "temperature": 0.8,
-            "max_tokens": 900
+            "max_tokens": 1200
         },
         timeout=60
     )
@@ -85,14 +86,23 @@ Generate exactly {NUM_POSTS} Indian meme posts.
 Inspired by these news headlines:
 {trend_text}
 
-Format STRICTLY:
+Return ONLY valid JSON.
 
-MEME: <1-2 lines>
-CAPTION: <2 short punchy lines>
-HASHTAGS: <8-12 hashtags>
+Format:
 
-Repeat exactly {NUM_POSTS} times.
-Do not explain anything.
+[
+  {{
+    "meme": "text",
+    "caption": "text",
+    "hashtags": "text"
+  }}
+]
+
+Return exactly {NUM_POSTS} objects inside the array.
+
+No markdown.
+No explanation.
+Only JSON.
 """
 
 output = generate_memes(prompt)
@@ -101,37 +111,38 @@ if not output:
     print("No output generated.")
     exit()
 
-# ---------------- ROBUST PARSING ----------------
+# ---------------- CLEAN & PARSE JSON ----------------
 
-posts = []
+output = output.strip()
 
-sections = output.split("MEME:")
+# Remove markdown wrapping if present
+if output.startswith("```"):
+    output = output.split("```")[1]
 
-for section in sections[1:NUM_POSTS+1]:
-    meme_text = ""
-    caption = ""
-    hashtags = ""
+# Extract JSON array safely
+start = output.find("[")
+end = output.rfind("]")
 
-    lines = [l.strip() for l in section.strip().split("\n") if l.strip()]
-
-    for line in lines:
-
-        if line.upper().startswith("CAPTION"):
-            caption = line.split(":", 1)[-1].strip()
-
-        elif line.upper().startswith("HASHTAG"):
-            hashtags = line.split(":", 1)[-1].strip()
-
-        elif not meme_text:
-            meme_text = line
-
-    if meme_text:
-        posts.append((meme_text, caption, hashtags))
-
-if len(posts) < 1:
-    print("Parser failed. Raw output below:\n")
+if start == -1 or end == -1:
+    print("Could not find JSON array. Raw output below:\n")
     print(output)
     exit()
+
+json_text = output[start:end+1]
+
+try:
+    posts = json.loads(json_text)
+except Exception:
+    print("JSON parsing failed. Raw output below:\n")
+    print(output)
+    exit()
+
+if not isinstance(posts, list) or len(posts) < 1:
+    print("Invalid JSON structure.")
+    print(output)
+    exit()
+
+posts = posts[:NUM_POSTS]
 
 # ---------------- IMAGE CREATION ----------------
 
@@ -178,7 +189,11 @@ caption_path = f"{SAVE_FOLDER}/captions_{today}.txt"
 
 with open(caption_path, "w", encoding="utf-8") as caption_file:
 
-    for i, (meme_text, caption, hashtags) in enumerate(posts, start=1):
+    for i, post in enumerate(posts, start=1):
+
+        meme_text = post.get("meme", "")
+        caption = post.get("caption", "")
+        hashtags = post.get("hashtags", "")
 
         image_path = create_meme(meme_text, i)
 
